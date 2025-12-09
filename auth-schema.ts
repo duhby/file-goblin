@@ -1,15 +1,5 @@
 import { relations } from "drizzle-orm";
-import {
-  boolean,
-  char,
-  index,
-  pgEnum,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -101,54 +91,3 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
-
-// --- End better-auth generated schema
-
-export const fileType = pgEnum("file_type", [
-  "image",
-  "video",
-  // For YouTube videos/clips
-  // TODO: have a feature to auto download linked videos/clips
-  "link",
-]);
-
-export const file = pgTable("file", {
-  id: text().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    // TODO: delete the file in backblaze when users are deleted
-    .references(() => user.id, { onDelete: "cascade" }),
-  name: text().notNull(),
-  type: fileType().notNull(),
-});
-
-export const tag = pgTable(
-  "tag",
-  {
-    id: text().primaryKey(),
-    name: text().notNull(),
-    color: char({ length: 7 }).notNull().default("#ffffff"),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-  },
-  (table) => [uniqueIndex("unique_tag").on(table.name, table.userId)],
-);
-
-export const hasTag = pgTable(
-  "has_tag",
-  {
-    file: text().references(() => file.id, { onDelete: "cascade" }),
-    tag: text().references(() => tag.id, { onDelete: "cascade" }),
-  },
-  (table) => [primaryKey({ columns: [table.file, table.tag] })],
-);
-
-export const subtagOf = pgTable(
-  "subtag_of",
-  {
-    parent: text().references(() => tag.id, { onDelete: "cascade" }),
-    child: text().references(() => tag.id, { onDelete: "cascade" }),
-  },
-  (table) => [primaryKey({ columns: [table.parent, table.child] })],
-);
