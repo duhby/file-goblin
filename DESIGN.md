@@ -10,7 +10,7 @@ File Goblin helps easily organize, search with hierarchical tags, and share medi
 - File storage (Backblaze B2 with Cloudflare CDN)
 - shadcn-svelte
 
-<img width="1496" height="1297" alt="image" src="https://github.com/user-attachments/assets/ba30abb7-e806-40b1-add3-a248ad706ece" />
+<img width="1496" height="1297" alt="image" src="https://github.com/user-attachments/assets/de706c0d-6843-4f31-8f2f-ba613ef3ba2f" />
 
 ## Database ERD
 
