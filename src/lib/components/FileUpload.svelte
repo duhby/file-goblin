@@ -16,15 +16,22 @@
   let errorMessage = $state("");
   let fileInput: HTMLInputElement;
 
-  function getFileType(mimeType: string): "image" | "video" | "link" {
+  function getFileType(mimeType: string): "image" | "video" {
     if (mimeType.startsWith("image/")) return "image";
     if (mimeType.startsWith("video/")) return "video";
-    return "link";
+    throw new Error("Unsupported file type. Only images and videos are allowed.");
   }
 
   async function handleUpload() {
     if (!file) {
       errorMessage = "Please select a file first";
+      uploadStatus = "error";
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      errorMessage = "Only image and video files are supported";
       uploadStatus = "error";
       return;
     }
@@ -87,7 +94,18 @@
   function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement;
     if (target.files && target.files[0]) {
-      file = target.files[0];
+      const selectedFile = target.files[0];
+
+      // Validate file type on selection
+      if (!selectedFile.type.startsWith("image/") && !selectedFile.type.startsWith("video/")) {
+        errorMessage = "Only image and video files are supported";
+        uploadStatus = "error";
+        file = null;
+        target.value = "";
+        return;
+      }
+
+      file = selectedFile;
       uploadStatus = "idle";
       errorMessage = "";
     }

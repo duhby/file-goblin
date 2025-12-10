@@ -9,6 +9,7 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
+  import { PUBLIC_CDN_URL } from "$env/static/public";
 
   let filesQuery = $state(getFiles());
 
@@ -23,11 +24,15 @@
       await deleteFile(fileId);
       filesQuery = getFiles();
     } catch (error) {
-      console.error("Error deleting file:", error);
+      console.error("Error delating file:", error);
       alert("Failed to delete file. Please try again.");
     } finally {
       deletingFiles.delete(fileId);
     }
+  }
+
+  function getFileUrl(fileId: string, fileName: string): string {
+    return `${PUBLIC_CDN_URL}/${fileId}/${fileName}`;
   }
 </script>
 
@@ -70,6 +75,13 @@
                       <span class="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                         {file.type}
                       </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onclick={() => window.open(getFileUrl(file.id, file.name), "_blank")}
+                      >
+                        Link
+                      </Button>
                       <Button
                         variant="destructive"
                         size="sm"
