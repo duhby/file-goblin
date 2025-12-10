@@ -7,7 +7,7 @@
   let isLoading = $state(false);
 </script>
 
-<div class="login-container">
+<div class="flex flex-col items-center justify-center min-h-screen">
   <Card.Root class="w-full max-w-sm">
     <Card.Header>
       <Card.Title>File Goblin</Card.Title>
@@ -39,13 +39,3 @@
     </Card.Footer>
   </Card.Root>
 </div>
-
-<style>
-  .login-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-  }
-</style>

@@ -1,8 +1,6 @@
-- let the file be renamed when uploading
-- add tags to the file when uploading
-- don't insert into the database if the upload fails or have a way to handle it
-- have a way to edit parent/child tags of a tag and view it more intuitavely
+- edit button on file page for editing file name and tags
+- fix formatting with light/dark mode for color select preview
 - let the color hex be directly entered when editing/creating tags
-- fix formatting with light/dark mode for "root" badges and color select preview
-- show all files on the file page and have a search by tags that includes all child tags in the search as well
-- maybe just completely ignore hierarchy for initial version
+- have a way to edit parent/child tags of a tag and view it more intuitavely
+- search by tags that includes child tags in the search
+- better file search ui

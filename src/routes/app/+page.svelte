@@ -141,7 +141,7 @@
       {#if files && files.length > 0}
         <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {#each files as file}
-            <Card class="overflow-hidden">
+            <Card class="overflow-hidden gap-0 p-0">
               <CardContent class="p-0">
                 <!-- Thumbnail Preview -->
                 <div class="relative aspect-video bg-muted">

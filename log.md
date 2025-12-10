@@ -1,3 +1,4 @@
 - Dec 7: 3 hours - research/initial setup
 - Dec 8: 5 hours - research/netlify/neondb/better-auth config
 - Dec 9: 7 hours - research/login/dashboard/backblaze/cloudflare/tags/upload
+- Dec 10: 5 hours - file search/more upload options/bug fixes
