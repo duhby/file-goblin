@@ -2,6 +2,9 @@
   import { authClient } from "$lib/client";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
+  import { Spinner } from "$lib/components/ui/spinner/index.js";
+
+  let isLoading = $state(false);
 </script>
 
 <div class="login-container">
@@ -13,12 +16,19 @@
     <Card.Footer class="flex-col gap-2">
       <Button
         onclick={async () => {
+          isLoading = true;
           await authClient.signIn.social({
             provider: "github",
           });
         }}
-        class="w-full cursor-pointer">Sign in with GitHub</Button
+        disabled={isLoading}
+        class="w-full cursor-pointer"
       >
+        {#if isLoading}
+          <Spinner class="mr-2" />
+        {/if}
+        Sign in with GitHub
+      </Button>
     </Card.Footer>
   </Card.Root>
 </div>

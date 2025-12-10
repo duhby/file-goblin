@@ -20,7 +20,7 @@
   "devDependencies": {
     "@eslint/compat": "^1.4.0",
     "@eslint/js": "^9.39.1",
-    "@lucide/svelte": "^0.556.0",
+    "@lucide/svelte": "^0.544.0",
     "@sveltejs/adapter-netlify": "^5.2.4",
     "@sveltejs/adapter-node": "^5.4.0",
     "@sveltejs/kit": "^2.48.5",
