@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from "./$types.js";
-  import { getFiles, deleteFile, getTags } from "$lib/remote/data.remote";
+  import { getFiles, deleteFile, updateFile, getTags } from "$lib/remote/data.remote";
   import {
     Card,
     CardContent,
@@ -14,6 +14,8 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import LinkIcon from "@lucide/svelte/icons/link";
   import CheckIcon from "@lucide/svelte/icons/check";
+  import PencilLine from "@lucide/svelte/icons/pencil-line";
+  import X from "@lucide/svelte/icons/x";
   import { PUBLIC_CDN_URL } from "$env/static/public";
 
   let { data }: { data: PageData } = $props();
@@ -29,6 +31,12 @@
 
   let deletingFiles = $state(new Set<string>());
   let copiedFiles = $state(new Set<string>());
+  let editingFileId = $state<string | null>(null);
+  let updatingFile = $state(false);
+
+  // Edit form state
+  let editFileName = $state("");
+  let editFileTagIds = $state<string[]>([]);
 
   function toggleTag(tagId: string) {
     const newSet = new Set(selectedTagIds);
@@ -96,6 +104,50 @@
     } catch (error) {
       console.error("Failed to copy link:", error);
       alert("Failed to copy link to clipboard");
+    }
+  }
+
+  function startEditFile(file: { id: string; name: string; tags: Array<{ id: string }> }) {
+    editingFileId = file.id;
+    editFileName = file.name;
+    editFileTagIds = file.tags.map((t) => t.id);
+  }
+
+  function cancelEdit() {
+    editingFileId = null;
+    editFileName = "";
+    editFileTagIds = [];
+  }
+
+  function toggleEditTag(tagId: string) {
+    const index = editFileTagIds.indexOf(tagId);
+    if (index === -1) {
+      editFileTagIds = [...editFileTagIds, tagId];
+    } else {
+      editFileTagIds = editFileTagIds.filter((id) => id !== tagId);
+    }
+  }
+
+  async function handleUpdateFile() {
+    if (!editingFileId || !editFileName.trim() || updatingFile) return;
+
+    try {
+      updatingFile = true;
+      await updateFile({ id: editingFileId, name: editFileName, tagIds: editFileTagIds });
+
+      // Refresh the files list
+      if (selectedTagIds.size === 0) {
+        getFiles(undefined).refresh();
+      } else {
+        getFiles({ tagIds: Array.from(selectedTagIds) }).refresh();
+      }
+
+      cancelEdit();
+    } catch (error) {
+      console.error("Failed to update file:", error);
+      alert("Failed to update file. Please try again.");
+    } finally {
+      updatingFile = false;
     }
   }
 </script>
@@ -242,54 +294,135 @@
                 </div>
 
                 <!-- File Info -->
-                <div class="p-3 space-y-2">
-                  <div class="min-w-0">
-                    <p class="text-sm font-medium truncate" title={file.name}>
-                      {file.name}
-                    </p>
-                    <p class="text-xs text-muted-foreground capitalize">{file.type}</p>
-                  </div>
-
-                  <!-- Tags -->
-                  {#if file.tags && file.tags.length > 0}
-                    <div class="flex flex-wrap gap-1">
-                      {#each file.tags as tag}
-                        <Badge
-                          style="background-color: {tag.color}; color: {tag.color === '#ffffff'
-                            ? '#000000'
-                            : '#ffffff'};"
-                          class="text-xs"
-                        >
-                          {tag.name}
-                        </Badge>
-                      {/each}
+                {#if editingFileId === file.id}
+                  <!-- Edit Form -->
+                  <div class="p-3 space-y-3">
+                    <div class="flex flex-col gap-2">
+                      <label for="edit-file-name-{file.id}" class="text-xs font-medium"
+                        >File Name</label
+                      >
+                      <input
+                        id="edit-file-name-{file.id}"
+                        type="text"
+                        bind:value={editFileName}
+                        class="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 bg-white dark:bg-gray-950"
+                      />
                     </div>
-                  {/if}
 
-                  <!-- Actions -->
-                  <div class="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="flex-1"
-                      onclick={() => window.open(getFileUrl(file.id, file.name), "_blank")}
-                    >
-                      Open
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onclick={() => handleDelete(file.id)}
-                      disabled={deletingFiles.has(file.id)}
-                    >
-                      {#if deletingFiles.has(file.id)}
-                        <Spinner />
-                      {:else}
-                        <Trash2 class="h-4 w-4" />
+                    <!-- Tag Selection -->
+                    {#await getTags()}
+                      <p class="text-xs text-muted-foreground">Loading tags...</p>
+                    {:then tags}
+                      {#if tags.length > 0}
+                        <div class="flex flex-col gap-2">
+                          <label class="text-xs font-medium">Tags</label>
+                          <div class="flex flex-wrap gap-1">
+                            {#each tags as tag}
+                              <button
+                                type="button"
+                                class="focus-visible:border-ring focus-visible:ring-ring/50 inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium transition-[color,box-shadow] focus-visible:ring-[3px] cursor-pointer {editFileTagIds.includes(
+                                  tag.id,
+                                )
+                                  ? 'bg-primary text-primary-foreground border-transparent'
+                                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'}"
+                                style={editFileTagIds.includes(tag.id)
+                                  ? `background-color: ${tag.color}; border-color: ${tag.color};`
+                                  : ""}
+                                onclick={() => toggleEditTag(tag.id)}
+                              >
+                                {tag.name}
+                              </button>
+                            {/each}
+                          </div>
+                        </div>
                       {/if}
-                    </Button>
+                    {/await}
+
+                    <!-- Edit Actions -->
+                    <div class="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onclick={cancelEdit}
+                        disabled={updatingFile}
+                      >
+                        <X class="w-4 h-4 mr-1" />
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onclick={handleUpdateFile}
+                        disabled={!editFileName.trim() || updatingFile}
+                      >
+                        {#if updatingFile}
+                          <Spinner class="mr-1" />
+                          Saving
+                        {:else}
+                          <CheckIcon class="w-4 h-4 mr-1" />
+                          Save
+                        {/if}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                {:else}
+                  <!-- Normal View -->
+                  <div class="p-3 space-y-2">
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium truncate" title={file.name}>
+                        {file.name}
+                      </p>
+                      <p class="text-xs text-muted-foreground capitalize">{file.type}</p>
+                    </div>
+
+                    <!-- Tags -->
+                    {#if file.tags && file.tags.length > 0}
+                      <div class="flex flex-wrap gap-1">
+                        {#each file.tags as tag}
+                          <Badge
+                            style="background-color: {tag.color}; color: {tag.color === '#ffffff'
+                              ? '#000000'
+                              : '#ffffff'};"
+                            class="text-xs"
+                          >
+                            {tag.name}
+                          </Badge>
+                        {/each}
+                      </div>
+                    {/if}
+
+                    <!-- Actions -->
+                    <div class="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="flex-1"
+                        onclick={() => window.open(getFileUrl(file.id, file.name), "_blank")}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onclick={() => startEditFile(file)}
+                        disabled={deletingFiles.has(file.id)}
+                      >
+                        <PencilLine class="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onclick={() => handleDelete(file.id)}
+                        disabled={deletingFiles.has(file.id)}
+                      >
+                        {#if deletingFiles.has(file.id)}
+                          <Spinner />
+                        {:else}
+                          <Trash2 class="h-4 w-4" />
+                        {/if}
+                      </Button>
+                    </div>
+                  </div>
+                {/if}
               </CardContent>
             </Card>
           {/each}

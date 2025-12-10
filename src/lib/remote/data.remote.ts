@@ -195,6 +195,59 @@ export const getFiles = query(GetFilesSchema, async (params) => {
   return filesWithTags;
 });
 
+const UpdateFileSchema = v.object({
+  id: v.pipe(v.string(), v.nonEmpty("File ID is required")),
+  name: v.optional(v.pipe(v.string(), v.nonEmpty("File name cannot be empty"))),
+  tagIds: v.optional(v.array(v.string())),
+});
+
+export const updateFile = command(UpdateFileSchema, async (data) => {
+  const session = await auth.api.getSession({
+    headers: getRequestEvent().request.headers,
+  });
+
+  if (!session?.user) error(401, "Unauthorized");
+
+  const dbFile = await db.select().from(file).where(eq(file.id, data.id));
+  if (dbFile.length === 0) error(404, "File not found");
+  if (dbFile[0].userId !== session.user.id) error(401, "Unauthorized");
+
+  // Update file name if provided
+  if (data.name !== undefined) {
+    await db.update(file).set({ name: data.name }).where(eq(file.id, data.id));
+  }
+
+  // Update tags if provided
+  if (data.tagIds !== undefined) {
+    // Verify all tags belong to the user
+    if (data.tagIds.length > 0) {
+      const userTags = await db
+        .select()
+        .from(tag)
+        .where(and(inArray(tag.id, data.tagIds), eq(tag.userId, session.user.id)));
+
+      if (userTags.length !== data.tagIds.length) {
+        error(400, "One or more tags are invalid or do not belong to the user");
+      }
+    }
+
+    // Remove existing tag associations
+    await db.delete(hasTag).where(eq(hasTag.file, data.id));
+
+    // Create new tag associations
+    if (data.tagIds.length > 0) {
+      const tagAssociations = data.tagIds.map((tagId) => ({
+        file: data.id,
+        tag: tagId,
+      }));
+
+      await db.insert(hasTag).values(tagAssociations);
+    }
+  }
+
+  return { message: "File updated successfully" };
+});
+
 export const deleteFile = command(v.string(), async (fileId) => {
   const session = await auth.api.getSession({
     headers: getRequestEvent().request.headers,
