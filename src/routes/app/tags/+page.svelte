@@ -16,8 +16,9 @@
     CardTitle,
   } from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
+  import { Spinner } from "$lib/components/ui/spinner";
   import iro from "@jaames/iro";
-  import { Trash2, Edit2, Plus, X, Check } from "@lucide/svelte";
+  import { Trash2, PencilLine, Plus, X, Check } from "@lucide/svelte";
 
   let tags = $state<Array<{ id: string; name: string; color: string; userId: string }>>([]);
   let tagHierarchy = $state<{
@@ -27,6 +28,9 @@
   let loading = $state(true);
   let showCreateForm = $state(false);
   let editingTagId = $state<string | null>(null);
+  let creatingTag = $state(false);
+  let updatingTag = $state(false);
+  let deletingTagIds = $state<Set<string>>(new Set());
 
   // Form state
   let newTagName = $state("");
@@ -120,14 +124,17 @@
   }
 
   async function handleCreateTag() {
-    if (!newTagName.trim()) return;
+    if (!newTagName.trim() || creatingTag) return;
 
     try {
+      creatingTag = true;
       await createTag({ name: newTagName, color: newTagColor });
       await loadTags();
       toggleCreateForm();
     } catch (error) {
       console.error("Failed to create tag:", error);
+    } finally {
+      creatingTag = false;
     }
   }
 
@@ -151,31 +158,38 @@
   }
 
   async function handleUpdateTag() {
-    if (!editingTagId || !editTagName.trim()) return;
+    if (!editingTagId || !editTagName.trim() || updatingTag) return;
 
     try {
+      updatingTag = true;
       await updateTag({ id: editingTagId, name: editTagName, color: editTagColor });
       await loadTags();
       cancelEdit();
     } catch (error) {
       console.error("Failed to update tag:", error);
+    } finally {
+      updatingTag = false;
     }
   }
 
   async function handleDeleteTag(tagId: string) {
+    if (deletingTagIds.has(tagId)) return;
     if (!confirm("Are you sure you want to delete this tag?")) return;
 
     try {
+      deletingTagIds.add(tagId);
       await deleteTag(tagId);
       await loadTags();
     } catch (error) {
       console.error("Failed to delete tag:", error);
+    } finally {
+      deletingTagIds.delete(tagId);
     }
   }
 
-  function isRootTag(tagId: string): boolean {
-    return !tagHierarchy.relationships.some((rel) => rel.childId === tagId);
-  }
+  // function isRootTag(tagId: string): boolean {
+  //   return !tagHierarchy.relationships.some((rel) => rel.childId === tagId);
+  // }
 
   onMount(() => {
     loadTags();
@@ -186,7 +200,7 @@
   <div class="header">
     <div>
       <h1>Tags</h1>
-      <p class="subtitle">Manage your file tags and organize them hierarchically</p>
+      <p class="subtitle">Manage your file tags</p>
     </div>
     <Button onclick={toggleCreateForm}>
       {#if showCreateForm}
@@ -229,10 +243,17 @@
           </div>
 
           <div class="form-actions">
-            <Button variant="outline" onclick={toggleCreateForm}>Cancel</Button>
-            <Button onclick={handleCreateTag} disabled={!newTagName.trim()}>
-              <Check class="w-4 h-4 mr-2" />
-              Create Tag
+            <Button variant="outline" onclick={toggleCreateForm} disabled={creatingTag}
+              >Cancel</Button
+            >
+            <Button onclick={handleCreateTag} disabled={!newTagName.trim() || creatingTag}>
+              {#if creatingTag}
+                <Spinner class="mr-2" />
+                Creating
+              {:else}
+                <Check class="w-4 h-4 mr-2" />
+                Create Tag
+              {/if}
             </Button>
           </div>
         </div>
@@ -275,13 +296,22 @@
               </div>
 
               <div class="form-actions">
-                <Button variant="outline" size="sm" onclick={cancelEdit}>
+                <Button variant="outline" size="sm" onclick={cancelEdit} disabled={updatingTag}>
                   <X class="w-4 h-4 mr-1" />
                   Cancel
                 </Button>
-                <Button size="sm" onclick={handleUpdateTag} disabled={!editTagName.trim()}>
-                  <Check class="w-4 h-4 mr-1" />
-                  Save
+                <Button
+                  size="sm"
+                  onclick={handleUpdateTag}
+                  disabled={!editTagName.trim() || updatingTag}
+                >
+                  {#if updatingTag}
+                    <Spinner class="mr-1" />
+                    Saving
+                  {:else}
+                    <Check class="w-4 h-4 mr-1" />
+                    Save
+                  {/if}
                 </Button>
               </div>
             </CardContent>
@@ -292,9 +322,6 @@
                   <Badge style="background-color: {tag.color}; color: white;">
                     {tag.name}
                   </Badge>
-                  {#if isRootTag(tag.id)}
-                    <span class="root-indicator">Root</span>
-                  {/if}
                 </div>
                 <div class="tag-color-info">
                   <div class="color-swatch" style="background-color: {tag.color};"></div>
@@ -303,11 +330,25 @@
               </div>
 
               <div class="tag-actions">
-                <Button variant="outline" size="sm" onclick={() => startEditTag(tag)}>
-                  <Edit2 class="w-4 h-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onclick={() => startEditTag(tag)}
+                  disabled={deletingTagIds.has(tag.id)}
+                >
+                  <PencilLine class="w-4 h-4" />
                 </Button>
-                <Button variant="outline" size="sm" onclick={() => handleDeleteTag(tag.id)}>
-                  <Trash2 class="w-4 h-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onclick={() => handleDeleteTag(tag.id)}
+                  disabled={deletingTagIds.has(tag.id)}
+                >
+                  {#if deletingTagIds.has(tag.id)}
+                    <Spinner />
+                  {:else}
+                    <Trash2 class="w-4 h-4" />
+                  {/if}
                 </Button>
               </div>
             </CardContent>
@@ -451,14 +492,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .root-indicator {
-    font-size: 0.75rem;
-    color: #6b7280;
-    background: #f3f4f6;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
   }
 
   .tag-color-info {

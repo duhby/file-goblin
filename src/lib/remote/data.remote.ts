@@ -31,13 +31,7 @@ export const createUploadUrl = query(UploadRequestSchema, async (data) => {
 
   const fileId = nanoid(10);
 
-  await db.insert(file).values({
-    id: fileId,
-    userId: session.user.id,
-    name: data.filename,
-    type: data.fileType,
-  });
-
+  // Don't create database entry yet - will be created in finalizeUpload after S3 upload succeeds
   const command = new PutObjectCommand({
     Bucket: BB_S3_BUCKET,
     Key: fileId,
@@ -55,9 +49,60 @@ export const createUploadUrl = query(UploadRequestSchema, async (data) => {
   };
 });
 
+const FinalizeUploadSchema = v.object({
+  fileId: v.pipe(v.string(), v.nonEmpty("File ID is required")),
+  filename: v.pipe(v.string(), v.nonEmpty("Filename is required")),
+  fileType: v.picklist(["image", "video", "link"], "Invalid file type"),
+  tagIds: v.optional(v.array(v.string())),
+});
+
+export const finalizeUpload = command(FinalizeUploadSchema, async (data) => {
+  const event = getRequestEvent();
+
+  const session = await auth.api.getSession({
+    headers: event.request.headers,
+  });
+
+  if (!session?.user) {
+    error(401, "Unauthorized");
+  }
+
+  // Create the file entry in the database
+  await db.insert(file).values({
+    id: data.fileId,
+    userId: session.user.id,
+    name: data.filename,
+    type: data.fileType,
+  });
+
+  // Associate tags if provided
+  if (data.tagIds && data.tagIds.length > 0) {
+    // Verify all tags belong to the user
+    const userTags = await db
+      .select()
+      .from(tag)
+      .where(and(inArray(tag.id, data.tagIds), eq(tag.userId, session.user.id)));
+
+    if (userTags.length !== data.tagIds.length) {
+      error(400, "One or more tags are invalid or do not belong to the user");
+    }
+
+    // Create tag associations
+    const tagAssociations = data.tagIds.map((tagId) => ({
+      file: data.fileId,
+      tag: tagId,
+    }));
+
+    await db.insert(hasTag).values(tagAssociations);
+  }
+
+  return { message: "Upload finalized successfully" };
+});
+
 const GetFilesSchema = v.optional(
   v.object({
     tagId: v.optional(v.string()),
+    tagIds: v.optional(v.array(v.string())),
     search: v.optional(v.string()),
   }),
 );
@@ -75,7 +120,7 @@ export const getFiles = query(GetFilesSchema, async (params) => {
 
   let conditions = [eq(file.userId, session.user.id)];
 
-  // If searching by tag, filter files that have the specific tag
+  // If searching by tag(s), filter files that have the specific tag(s)
   if (params?.tagId) {
     const filesWithTag = await db
       .select({ fileId: hasTag.file })
@@ -83,6 +128,31 @@ export const getFiles = query(GetFilesSchema, async (params) => {
       .where(eq(hasTag.tag, params.tagId));
 
     const fileIds = filesWithTag.map((f) => f.fileId).filter((id): id is string => id !== null);
+
+    if (fileIds.length === 0) {
+      return [];
+    }
+
+    conditions.push(inArray(file.id, fileIds));
+  } else if (params?.tagIds && params.tagIds.length > 0) {
+    // Find files that have ALL of the selected tags
+    const filesWithTags = await db
+      .select({ fileId: hasTag.file })
+      .from(hasTag)
+      .where(inArray(hasTag.tag, params.tagIds));
+
+    // Count how many times each file appears (should equal params.tagIds.length for files with all tags)
+    const fileIdCounts = new Map<string, number>();
+    for (const row of filesWithTags) {
+      if (row.fileId) {
+        fileIdCounts.set(row.fileId, (fileIdCounts.get(row.fileId) || 0) + 1);
+      }
+    }
+
+    // Only include files that have all the selected tags
+    const fileIds = Array.from(fileIdCounts.entries())
+      .filter(([_, count]) => count === params.tagIds!.length)
+      .map(([fileId, _]) => fileId);
 
     if (fileIds.length === 0) {
       return [];
@@ -102,7 +172,27 @@ export const getFiles = query(GetFilesSchema, async (params) => {
     .where(and(...conditions))
     .orderBy(file.id);
 
-  return userFiles;
+  // Fetch tags for each file
+  const filesWithTags = await Promise.all(
+    userFiles.map(async (f) => {
+      const fileTags = await db
+        .select({
+          id: tag.id,
+          name: tag.name,
+          color: tag.color,
+        })
+        .from(hasTag)
+        .innerJoin(tag, eq(tag.id, hasTag.tag))
+        .where(eq(hasTag.file, f.id));
+
+      return {
+        ...f,
+        tags: fileTags,
+      };
+    }),
+  );
+
+  return filesWithTags;
 });
 
 export const deleteFile = command(v.string(), async (fileId) => {
