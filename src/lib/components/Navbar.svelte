@@ -93,16 +93,16 @@
 
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <button class="relative size-9 rounded-full">
+          <div class="relative size-9 rounded-full cursor-pointer">
             <Avatar>
               {#if user.image}
                 <AvatarImage src={user.image} alt={user.name} />
               {/if}
               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
             </Avatar>
-          </button>
+          </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="w-56">
+        <DropdownMenuContent align="end">
           <DropdownMenuLabel class="font-normal">
             <div class="flex flex-col space-y-1">
               <p class="text-sm font-medium leading-none">{user.name}</p>
@@ -110,7 +110,9 @@
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onclick={handleSignOut}>Sign out</DropdownMenuItem>
+          <DropdownMenuItem class="cursor-pointer" onclick={handleSignOut}
+            >Sign out</DropdownMenuItem
+          >
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

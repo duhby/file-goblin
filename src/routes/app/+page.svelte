@@ -219,15 +219,14 @@
                 <!-- Thumbnail Preview -->
                 <div class="relative aspect-video bg-muted group">
                   <!-- Copy Link Button -->
-                  <div
-                    class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  >
+                  <div class="absolute top-2 right-2 z-10">
                     <Button
                       variant="outline"
                       size="icon"
                       class="h-8 w-8 shadow-lg"
                       onclick={(e) => {
                         e.stopPropagation();
+
                         copyFileLink(file.id, file.name);
                       }}
                       title="Copy link"
@@ -245,15 +244,15 @@
                     <img
                       src={getFileUrl(file.id, file.name)}
                       alt={file.name}
-                      class="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                      class="w-full h-full object-cover"
                     />
                   {:else if isVideo(file.name)}
                     <video
                       src={getFileUrl(file.id, file.name)}
-                      class="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                      class="w-full h-full object-cover"
                       muted
                       preload="metadata"
-                    />
+                    ></video>
                     <div
                       class="absolute inset-0 flex items-center justify-center pointer-events-none"
                     >
@@ -272,9 +271,11 @@
                       </div>
                     </div>
                   {:else}
-                    <div
-                      class="w-full h-full flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors"
+                    <button
+                      type="button"
+                      class="w-full h-full flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors border-0 bg-transparent"
                       onclick={() => window.open(getFileUrl(file.id, file.name), "_blank")}
+                      aria-label="Open file"
                     >
                       <svg
                         class="w-16 h-16 text-muted-foreground"
@@ -289,7 +290,7 @@
                           d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                         />
                       </svg>
-                    </div>
+                    </button>
                   {/if}
                 </div>
 
@@ -315,7 +316,7 @@
                     {:then tags}
                       {#if tags.length > 0}
                         <div class="flex flex-col gap-2">
-                          <label class="text-xs font-medium">Tags</label>
+                          <span class="text-xs font-medium">Tags</span>
                           <div class="flex flex-wrap gap-1">
                             {#each tags as tag}
                               <button
@@ -405,6 +406,7 @@
                         size="sm"
                         onclick={() => startEditFile(file)}
                         disabled={deletingFiles.has(file.id)}
+                        aria-label="Edit file"
                       >
                         <PencilLine class="h-4 w-4" />
                       </Button>
@@ -413,6 +415,7 @@
                         size="sm"
                         onclick={() => handleDelete(file.id)}
                         disabled={deletingFiles.has(file.id)}
+                        aria-label="Delete file"
                       >
                         {#if deletingFiles.has(file.id)}
                           <Spinner />

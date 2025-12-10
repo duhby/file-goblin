@@ -440,12 +440,6 @@
       flex-direction: column;
     }
 
-    .flex.justify-between.items-center.p-5 {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-
     .flex.gap-2:last-child {
       width: 100%;
       justify-content: flex-end;
