@@ -11,7 +11,9 @@
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Spinner } from "$lib/components/ui/spinner";
-  import { Trash2 } from "@lucide/svelte";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import LinkIcon from "@lucide/svelte/icons/link";
+  import CheckIcon from "@lucide/svelte/icons/check";
   import { PUBLIC_CDN_URL } from "$env/static/public";
 
   let { data }: { data: PageData } = $props();
@@ -26,6 +28,7 @@
   });
 
   let deletingFiles = $state(new Set<string>());
+  let copiedFiles = $state(new Set<string>());
 
   function toggleTag(tagId: string) {
     const newSet = new Set(selectedTagIds);
@@ -65,7 +68,7 @@
   }
 
   function getFileUrl(fileId: string, fileName: string): string {
-    return `${PUBLIC_CDN_URL}/${fileId}/${fileName}`;
+    return `${PUBLIC_CDN_URL}/${fileId}/${encodeURIComponent(fileName)}`;
   }
 
   function isImage(fileName: string): boolean {
@@ -76,6 +79,24 @@
   function isVideo(fileName: string): boolean {
     const ext = fileName.split(".").pop()?.toLowerCase();
     return ["mp4", "webm", "mov", "avi"].includes(ext || "");
+  }
+
+  async function copyFileLink(fileId: string, fileName: string) {
+    const url = getFileUrl(fileId, fileName);
+    try {
+      await navigator.clipboard.writeText(url);
+      copiedFiles = new Set(copiedFiles).add(fileId);
+
+      // Reset the check icon after 2 seconds
+      setTimeout(() => {
+        const newSet = new Set(copiedFiles);
+        newSet.delete(fileId);
+        copiedFiles = newSet;
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+      alert("Failed to copy link to clipboard");
+    }
   }
 </script>
 
@@ -144,19 +165,40 @@
             <Card class="overflow-hidden gap-0 p-0">
               <CardContent class="p-0">
                 <!-- Thumbnail Preview -->
-                <div class="relative aspect-video bg-muted">
+                <div class="relative aspect-video bg-muted group">
+                  <!-- Copy Link Button -->
+                  <div
+                    class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  >
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      class="h-8 w-8 shadow-lg"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        copyFileLink(file.id, file.name);
+                      }}
+                      title="Copy link"
+                    >
+                      {#if copiedFiles.has(file.id)}
+                        <CheckIcon class="h-4 w-4" />
+                      {:else}
+                        <LinkIcon class="h-4 w-4" />
+                      {/if}
+                      <span class="sr-only">Copy link</span>
+                    </Button>
+                  </div>
+
                   {#if isImage(file.name)}
                     <img
                       src={getFileUrl(file.id, file.name)}
                       alt={file.name}
-                      class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onclick={() => window.open(getFileUrl(file.id, file.name), "_blank")}
+                      class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                     />
                   {:else if isVideo(file.name)}
                     <video
                       src={getFileUrl(file.id, file.name)}
-                      class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onclick={() => window.open(getFileUrl(file.id, file.name), "_blank")}
+                      class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                       muted
                       preload="metadata"
                     />
@@ -243,7 +285,7 @@
                       {#if deletingFiles.has(file.id)}
                         <Spinner />
                       {:else}
-                        <Trash2 class="w-4 h-4" />
+                        <Trash2 class="h-4 w-4" />
                       {/if}
                     </Button>
                   </div>
