@@ -8,7 +8,7 @@ import { db } from "$lib/server/db";
 import { file } from "$lib/server/db/schema";
 import { auth } from "$lib/auth";
 import { getRequestEvent } from "$app/server";
-import { AWS_S3_BUCKET } from "$env/static/private";
+import { BB_S3_BUCKET } from "$env/static/private";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
 
@@ -39,7 +39,7 @@ export const createUploadUrl = query(UploadRequestSchema, async (data) => {
   });
 
   const command = new PutObjectCommand({
-    Bucket: AWS_S3_BUCKET,
+    Bucket: BB_S3_BUCKET,
     Key: fileId,
     ContentType: data.contentType,
   });
@@ -87,7 +87,7 @@ export const deleteFile = command(v.string(), async (fileId) => {
 
   await s3Client.send(
     new DeleteObjectCommand({
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BB_S3_BUCKET,
       Key: fileId,
     }),
   );

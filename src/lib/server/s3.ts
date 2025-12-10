@@ -1,19 +1,19 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import {
-  AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY,
-  AWS_REGION,
-  AWS_ENDPOINT,
+  BB_ACCESS_KEY_ID,
+  BB_SECRET_ACCESS_KEY,
+  BB_REGION,
+  BB_ENDPOINT,
 } from "$env/static/private";
 
 export const s3Client = new S3Client({
-  region: AWS_REGION,
+  region: BB_REGION,
   credentials: {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    accessKeyId: BB_ACCESS_KEY_ID,
+    secretAccessKey: BB_SECRET_ACCESS_KEY,
   },
-  ...(AWS_ENDPOINT && {
-    endpoint: AWS_ENDPOINT,
+  ...(BB_ENDPOINT && {
+    endpoint: BB_ENDPOINT,
     forcePathStyle: true,
   }),
 });
