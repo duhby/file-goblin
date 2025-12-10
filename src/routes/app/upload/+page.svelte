@@ -16,10 +16,8 @@
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Spinner } from "$lib/components/ui/spinner";
+  import { Trash2 } from "@lucide/svelte";
   import { PUBLIC_CDN_URL } from "$env/static/public";
-
-  let filesQuery = $state(getFiles(undefined));
-  let tagsQuery = $state(getTags(undefined));
 
   let deletingFiles = $state(new Set<string>());
 
@@ -156,7 +154,7 @@
       uploadStatus = "success";
 
       // Refresh file list
-      filesQuery = getFiles(undefined);
+      getFiles(undefined).refresh();
 
       setTimeout(() => {
         file = null;
@@ -175,19 +173,21 @@
     }
   }
 
-  async function handleDelete(fileId: string) {
+  async function handleDelete(fileId: string, refresh: () => void) {
     if (deletingFiles.has(fileId)) return;
 
-    deletingFiles.add(fileId);
+    deletingFiles = new Set(deletingFiles).add(fileId);
 
     try {
       await deleteFile(fileId);
-      filesQuery = getFiles(undefined);
+      refresh();
     } catch (error) {
       console.error("Error deleting file:", error);
       alert("Failed to delete file. Please try again.");
     } finally {
-      deletingFiles.delete(fileId);
+      const newSet = new Set(deletingFiles);
+      newSet.delete(fileId);
+      deletingFiles = newSet;
     }
   }
 
@@ -265,7 +265,7 @@
               <!-- Tag Selection -->
               <div class="flex flex-col gap-2">
                 <span class="text-sm font-medium">Tags (optional)</span>
-                {#await tagsQuery}
+                {#await getTags(undefined)}
                   <p class="text-sm text-muted-foreground">Loading tags...</p>
                 {:then tags}
                   {#if tags && tags.length > 0}
@@ -377,7 +377,7 @@
           <CardDescription>Recently uploaded files</CardDescription>
         </CardHeader>
         <CardContent>
-          {#await filesQuery}
+          {#await getFiles(undefined)}
             <p class="text-sm text-muted-foreground">Loading files...</p>
           {:then files}
             {#if files && files.length > 0}
@@ -400,16 +400,15 @@
                         Link
                       </Button>
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        onclick={() => handleDelete(file.id)}
+                        onclick={() => handleDelete(file.id, () => getFiles(undefined).refresh())}
                         disabled={deletingFiles.has(file.id)}
                       >
                         {#if deletingFiles.has(file.id)}
-                          <Spinner class="mr-2" />
-                          Deleting
+                          <Spinner />
                         {:else}
-                          Delete
+                          <Trash2 class="w-4 h-4" />
                         {/if}
                       </Button>
                     </div>

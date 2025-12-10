@@ -11,12 +11,12 @@
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Spinner } from "$lib/components/ui/spinner";
+  import { Trash2 } from "@lucide/svelte";
   import { PUBLIC_CDN_URL } from "$env/static/public";
 
   let { data }: { data: PageData } = $props();
 
   let selectedTagIds = $state<Set<string>>(new Set());
-  let tagsQuery = $state(getTags());
 
   let filesQuery = $derived.by(() => {
     if (selectedTagIds.size === 0) {
@@ -44,21 +44,23 @@
   async function handleDelete(fileId: string) {
     if (deletingFiles.has(fileId)) return;
 
-    deletingFiles.add(fileId);
+    deletingFiles = new Set(deletingFiles).add(fileId);
 
     try {
       await deleteFile(fileId);
-      // Trigger a refresh by reassigning filesQuery
+      // Trigger a refresh using the query cache
       if (selectedTagIds.size === 0) {
-        filesQuery = getFiles(undefined);
+        getFiles(undefined).refresh();
       } else {
-        filesQuery = getFiles({ tagIds: Array.from(selectedTagIds) });
+        getFiles({ tagIds: Array.from(selectedTagIds) }).refresh();
       }
     } catch (error) {
       console.error("Error deleting file:", error);
       alert("Failed to delete file. Please try again.");
     } finally {
-      deletingFiles.delete(fileId);
+      const newSet = new Set(deletingFiles);
+      newSet.delete(fileId);
+      deletingFiles = newSet;
     }
   }
 
@@ -98,7 +100,7 @@
           </Button>
         {/if}
       </div>
-      {#await tagsQuery}
+      {#await getTags()}
         <p class="text-sm text-muted-foreground">Loading tags...</p>
       {:then tags}
         <div class="flex flex-wrap gap-2">
@@ -233,16 +235,15 @@
                       Open
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
                       onclick={() => handleDelete(file.id)}
                       disabled={deletingFiles.has(file.id)}
                     >
                       {#if deletingFiles.has(file.id)}
-                        <Spinner class="mr-2" />
-                        Deleting
+                        <Spinner />
                       {:else}
-                        Delete
+                        <Trash2 class="w-4 h-4" />
                       {/if}
                     </Button>
                   </div>

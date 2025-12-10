@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     getTags,
     createTag,
@@ -20,12 +19,6 @@
   import iro from "@jaames/iro";
   import { Trash2, PencilLine, Plus, X, Check } from "@lucide/svelte";
 
-  let tags = $state<Array<{ id: string; name: string; color: string; userId: string }>>([]);
-  let tagHierarchy = $state<{
-    tags: any[];
-    relationships: Array<{ parentId: string | null; childId: string | null }>;
-  }>({ tags: [], relationships: [] });
-  let loading = $state(true);
   let showCreateForm = $state(false);
   let editingTagId = $state<string | null>(null);
   let creatingTag = $state(false);
@@ -41,20 +34,6 @@
   // Color picker instances
   let createColorPicker: any = null;
   let editColorPicker: any = null;
-
-  async function loadTags() {
-    try {
-      loading = true;
-      const result = await getTags();
-      tags = result || [];
-      const hierarchyResult = await getTagHierarchy();
-      tagHierarchy = hierarchyResult || { tags: [], relationships: [] };
-    } catch (error) {
-      console.error("Failed to load tags:", error);
-    } finally {
-      loading = false;
-    }
-  }
 
   function initCreateColorPicker() {
     const container = document.getElementById("create-color-picker");
@@ -129,7 +108,8 @@
     try {
       creatingTag = true;
       await createTag({ name: newTagName, color: newTagColor });
-      await loadTags();
+      getTags().refresh();
+      getTagHierarchy().refresh();
       toggleCreateForm();
     } catch (error) {
       console.error("Failed to create tag:", error);
@@ -163,7 +143,8 @@
     try {
       updatingTag = true;
       await updateTag({ id: editingTagId, name: editTagName, color: editTagColor });
-      await loadTags();
+      getTags().refresh();
+      getTagHierarchy().refresh();
       cancelEdit();
     } catch (error) {
       console.error("Failed to update tag:", error);
@@ -179,21 +160,14 @@
     try {
       deletingTagIds.add(tagId);
       await deleteTag(tagId);
-      await loadTags();
+      getTags().refresh();
+      getTagHierarchy().refresh();
     } catch (error) {
       console.error("Failed to delete tag:", error);
     } finally {
       deletingTagIds.delete(tagId);
     }
   }
-
-  // function isRootTag(tagId: string): boolean {
-  //   return !tagHierarchy.relationships.some((rel) => rel.childId === tagId);
-  // }
-
-  onMount(() => {
-    loadTags();
-  });
 </script>
 
 <div class="tags-container">
@@ -261,102 +235,110 @@
     </Card>
   {/if}
 
-  {#if loading}
+  {#await getTags()}
     <div class="loading">Loading tags...</div>
-  {:else if tags.length === 0}
-    <Card>
-      <CardContent class="empty-state">
-        <p>No tags yet. Create your first tag to get started!</p>
-      </CardContent>
-    </Card>
-  {:else}
-    <div class="tags-grid">
-      {#each tags as tag (tag.id)}
-        <Card class="tag-card">
-          {#if editingTagId === tag.id}
-            <CardContent class="edit-form">
-              <div class="form-field">
-                <label for="edit-tag-name-{tag.id}">Tag Name</label>
-                <input
-                  id="edit-tag-name-{tag.id}"
-                  type="text"
-                  bind:value={editTagName}
-                  class="input"
-                />
-              </div>
+  {:then tags}
+    {#if tags.length === 0}
+      <Card>
+        <CardContent class="empty-state">
+          <p>No tags yet. Create your first tag to get started!</p>
+        </CardContent>
+      </Card>
+    {:else}
+      <div class="tags-grid">
+        {#each tags as tag (tag.id)}
+          <Card class="tag-card">
+            {#if editingTagId === tag.id}
+              <CardContent class="edit-form">
+                <div class="form-field">
+                  <label for="edit-tag-name-{tag.id}">Tag Name</label>
+                  <input
+                    id="edit-tag-name-{tag.id}"
+                    type="text"
+                    bind:value={editTagName}
+                    class="input"
+                  />
+                </div>
 
-              <div class="form-field">
-                <label for="edit-color-picker">Color</label>
-                <div class="color-picker-container">
-                  <div id="edit-color-picker"></div>
-                  <div class="color-preview" style="background-color: {editTagColor};">
-                    <span class="color-hex">{editTagColor}</span>
+                <div class="form-field">
+                  <label for="edit-color-picker">Color</label>
+                  <div class="color-picker-container">
+                    <div id="edit-color-picker"></div>
+                    <div class="color-preview" style="background-color: {editTagColor};">
+                      <span class="color-hex">{editTagColor}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="form-actions">
-                <Button variant="outline" size="sm" onclick={cancelEdit} disabled={updatingTag}>
-                  <X class="w-4 h-4 mr-1" />
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onclick={handleUpdateTag}
-                  disabled={!editTagName.trim() || updatingTag}
-                >
-                  {#if updatingTag}
-                    <Spinner class="mr-1" />
-                    Saving
-                  {:else}
-                    <Check class="w-4 h-4 mr-1" />
-                    Save
-                  {/if}
-                </Button>
-              </div>
-            </CardContent>
-          {:else}
-            <CardContent class="tag-display">
-              <div class="tag-info">
-                <div class="tag-badge-container">
-                  <Badge style="background-color: {tag.color}; color: white;">
-                    {tag.name}
-                  </Badge>
+                <div class="form-actions">
+                  <Button variant="outline" size="sm" onclick={cancelEdit} disabled={updatingTag}>
+                    <X class="w-4 h-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onclick={handleUpdateTag}
+                    disabled={!editTagName.trim() || updatingTag}
+                  >
+                    {#if updatingTag}
+                      <Spinner class="mr-1" />
+                      Saving
+                    {:else}
+                      <Check class="w-4 h-4 mr-1" />
+                      Save
+                    {/if}
+                  </Button>
                 </div>
-                <div class="tag-color-info">
-                  <div class="color-swatch" style="background-color: {tag.color};"></div>
-                  <span class="color-code">{tag.color}</span>
+              </CardContent>
+            {:else}
+              <CardContent class="tag-display">
+                <div class="tag-info">
+                  <div class="tag-badge-container">
+                    <Badge style="background-color: {tag.color}; color: white;">
+                      {tag.name}
+                    </Badge>
+                  </div>
+                  <div class="tag-color-info">
+                    <div class="color-swatch" style="background-color: {tag.color};"></div>
+                    <span class="color-code">{tag.color}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div class="tag-actions">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onclick={() => startEditTag(tag)}
-                  disabled={deletingTagIds.has(tag.id)}
-                >
-                  <PencilLine class="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onclick={() => handleDeleteTag(tag.id)}
-                  disabled={deletingTagIds.has(tag.id)}
-                >
-                  {#if deletingTagIds.has(tag.id)}
-                    <Spinner />
-                  {:else}
-                    <Trash2 class="w-4 h-4" />
-                  {/if}
-                </Button>
-              </div>
-            </CardContent>
-          {/if}
-        </Card>
-      {/each}
-    </div>
-  {/if}
+                <div class="tag-actions">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={() => startEditTag(tag)}
+                    disabled={deletingTagIds.has(tag.id)}
+                  >
+                    <PencilLine class="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={() => handleDeleteTag(tag.id)}
+                    disabled={deletingTagIds.has(tag.id)}
+                  >
+                    {#if deletingTagIds.has(tag.id)}
+                      <Spinner />
+                    {:else}
+                      <Trash2 class="w-4 h-4" />
+                    {/if}
+                  </Button>
+                </div>
+              </CardContent>
+            {/if}
+          </Card>
+        {/each}
+      </div>
+    {/if}
+  {:catch error}
+    <Card>
+      <CardContent class="empty-state">
+        <p class="text-red-600">Error loading tags: {error.message}</p>
+      </CardContent>
+    </Card>
+  {/await}
 </div>
 
 <style>
