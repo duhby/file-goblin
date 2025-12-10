@@ -3,6 +3,7 @@ import { sveltekitCookies } from "better-auth/svelte-kit";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "$lib/server/db"; // your drizzle instance
 import { getRequestEvent } from "$app/server";
+import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } from "$env/static/private";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -10,8 +11,8 @@ export const auth = betterAuth({
   }),
   socialProviders: {
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      clientId: GITHUB_CLIENT_ID,
+      clientSecret: GITHUB_CLIENT_SECRET,
       disableSignUp: true,
     },
   },

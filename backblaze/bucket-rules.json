@@ -1,0 +1,20 @@
+[
+  {
+    "corsRuleName": "allow-uploads",
+    "allowedOrigins": [
+      "http://localhost:5173",
+      "https://fg.duhby.dev"
+    ],
+    "allowedHeaders": [
+      "*"
+    ],
+    "allowedOperations": [
+      "s3_get",
+      "s3_put",
+      "s3_delete",
+      "s3_head",
+      "s3_post"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
