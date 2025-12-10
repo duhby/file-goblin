@@ -12,13 +12,8 @@
   import ThemeToggle from "$lib/components/ThemeToggle.svelte";
   import { authClient } from "$lib/client";
   import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
   import { Upload, FolderOpen, Tags } from "@lucide/svelte";
-
-  let currentPath = $state("");
-
-  if (typeof window !== "undefined") {
-    currentPath = window.location.pathname;
-  }
 
   type User = {
     name: string;
@@ -48,7 +43,7 @@
   }
 
   function isActivePath(path: string): boolean {
-    return currentPath === path || currentPath.startsWith(path + "/");
+    return $page.url.pathname === path || $page.url.pathname.startsWith(path + "/");
   }
 </script>
 
