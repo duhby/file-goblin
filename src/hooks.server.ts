@@ -23,7 +23,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   if (session && event.url.pathname === "/login") {
-    redirect(303, "/");
+    redirect(303, "/app");
   }
 
   return svelteKitHandler({ event, resolve, auth, building });
