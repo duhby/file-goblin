@@ -4,9 +4,23 @@
 
   import { toggleMode } from "mode-watcher";
   import { Button } from "$lib/components/ui/button/index.js";
+
+  let { floating = false }: { floating?: boolean } = $props();
 </script>
 
-<div class="fixed bottom-4 right-4 z-50">
+{#if floating}
+  <div class="fixed bottom-4 right-4 z-50">
+    <Button onclick={toggleMode} variant="outline" size="icon">
+      <SunIcon
+        class="transition-all! h-[1.2rem] w-[1.2rem] rotate-0 scale-100 dark:-rotate-90 dark:scale-0"
+      />
+      <MoonIcon
+        class="transition-all! absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 dark:rotate-0 dark:scale-100"
+      />
+      <span class="sr-only">Toggle theme</span>
+    </Button>
+  </div>
+{:else}
   <Button onclick={toggleMode} variant="outline" size="icon">
     <SunIcon
       class="transition-all! h-[1.2rem] w-[1.2rem] rotate-0 scale-100 dark:-rotate-90 dark:scale-0"
@@ -16,4 +30,4 @@
     />
     <span class="sr-only">Toggle theme</span>
   </Button>
-</div>
+{/if}

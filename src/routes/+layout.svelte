@@ -5,6 +5,14 @@
   import ThemeToggle from "$lib/components/ThemeToggle.svelte";
 
   let { children } = $props();
+
+  let currentPath = $state("");
+
+  if (typeof window !== "undefined") {
+    currentPath = window.location.pathname;
+  }
+
+  let showThemeToggle = $derived(!currentPath.startsWith("/app"));
 </script>
 
 <svelte:head>
@@ -13,4 +21,6 @@
 
 <ModeWatcher />
 {@render children()}
-<ThemeToggle />
+{#if showThemeToggle}
+  <ThemeToggle floating />
+{/if}

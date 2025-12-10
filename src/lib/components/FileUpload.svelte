@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createUploadUrl } from "../../routes/upload/data.remote";
+  import { createUploadUrl } from "../../routes/app/upload/data.remote";
   import { Button } from "$lib/components/ui/button";
   import {
     Card,
