@@ -1,6 +1,6 @@
 <script lang="ts">
   import FileUpload from "$lib/components/FileUpload.svelte";
-  import { getFiles, deleteFile } from "./data.remote";
+  import { getFiles, deleteFile } from "$lib/remote/data.remote";
   import {
     Card,
     CardContent,
