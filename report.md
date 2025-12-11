@@ -4,7 +4,7 @@ This project lets the user upload files, assign tags, search for uploaded files,
 
 ## Demo Video
 
-link
+[link](https://cdn.duhby.dev/Wn3t8_0iIr/cs452%20report.mp4)
 
 ## Creating this project, I learned how to
 
