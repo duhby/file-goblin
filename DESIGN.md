@@ -5,8 +5,7 @@ File Goblin helps easily organize, search with hierarchical tags, and share medi
 - SvelteKit
 - Better-Auth
 - PostgreSQL (NeonDB, DrizzleORM)
-- Ubuntu VPS
-- Docker
+- Netlify
 - File storage (Backblaze B2 with Cloudflare CDN)
 - shadcn-svelte
 

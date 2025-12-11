@@ -200,15 +200,15 @@
   <title>Upload Files - File Goblin</title>
 </svelte:head>
 
-<div class="container mx-auto p-4 space-y-8">
+<div class="w-full max-w-7xl mx-auto px-4 py-4 space-y-8">
   <div class="flex flex-col gap-2">
     <h1 class="text-3xl font-bold">Upload Files</h1>
     <p class="text-muted-foreground">Upload and manage your images and videos</p>
   </div>
 
-  <div class="grid gap-8 md:grid-cols-2">
+  <div class="grid gap-8 md:grid-cols-2 w-full">
     <!-- Upload Section -->
-    <div>
+    <div class="w-full min-w-0">
       <Card class="w-full">
         <CardHeader>
           <CardTitle>Upload File</CardTitle>
@@ -247,18 +247,20 @@
               <!-- Editable Filename -->
               <div class="flex flex-col gap-2">
                 <label for="filename-input" class="text-sm font-medium">File Name</label>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 w-full">
                   <input
                     id="filename-input"
                     type="text"
                     bind:value={editableFileName}
                     disabled={uploading}
                     placeholder="Enter file name"
-                    class="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background
+                    class="flex-1 min-w-0 px-3 py-2 text-sm rounded-md border border-input bg-background
                       focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
                       disabled:cursor-not-allowed disabled:opacity-50"
                   />
-                  <span class="text-sm text-muted-foreground font-mono">{fileExtension}</span>
+                  <span class="text-sm text-muted-foreground font-mono flex-shrink-0"
+                    >{fileExtension}</span
+                  >
                 </div>
               </div>
 
@@ -370,8 +372,8 @@
     </div>
 
     <!-- Files List Section -->
-    <div>
-      <Card>
+    <div class="w-full min-w-0">
+      <Card class="w-full">
         <CardHeader>
           <CardTitle>Your Files</CardTitle>
           <CardDescription>Recently uploaded files</CardDescription>
@@ -383,13 +385,17 @@
             {#if files && files.length > 0}
               <div class="space-y-2">
                 {#each files.slice(0, 10) as file}
-                  <div class="flex items-center justify-between p-2 border rounded-md">
+                  <div
+                    class="flex flex-col sm:flex-row sm:items-center gap-2 p-2 border rounded-md"
+                  >
                     <div class="flex-1 min-w-0">
                       <p class="text-sm font-medium truncate">{file.name}</p>
                       <p class="text-xs text-muted-foreground capitalize">{file.type}</p>
                     </div>
-                    <div class="flex items-center gap-2">
-                      <span class="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                      <span
+                        class="hidden sm:inline-flex px-2 py-1 text-xs rounded-full bg-primary/10 text-primary"
+                      >
                         {file.type}
                       </span>
                       <Button

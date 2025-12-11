@@ -1,13 +1,7 @@
 <script lang="ts">
   import type { PageData } from "./$types.js";
   import { getFiles, deleteFile, updateFile, getTags } from "$lib/remote/data.remote";
-  import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-  } from "$lib/components/ui/card";
+  import { Card, CardContent } from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
   import { Badge } from "$lib/components/ui/badge";
   import { Spinner } from "$lib/components/ui/spinner";
@@ -17,8 +11,6 @@
   import PencilLine from "@lucide/svelte/icons/pencil-line";
   import X from "@lucide/svelte/icons/x";
   import { PUBLIC_CDN_URL } from "$env/static/public";
-
-  let { data }: { data: PageData } = $props();
 
   let selectedTagIds = $state<Set<string>>(new Set());
 
