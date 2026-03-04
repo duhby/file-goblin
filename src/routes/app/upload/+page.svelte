@@ -386,11 +386,11 @@
               <div class="space-y-2">
                 {#each files.slice(0, 10) as file}
                   <div
-                    class="flex flex-col sm:flex-row sm:items-center gap-2 p-2 border rounded-md"
+                    class="flex flex-col sm:flex-row sm:items-center gap-2 p-2 border rounded-md overflow-hidden"
                   >
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 overflow-hidden">
                       <p class="text-sm font-medium truncate">{file.name}</p>
-                      <p class="text-xs text-muted-foreground capitalize">{file.type}</p>
+                      <p class="text-xs text-muted-foreground capitalize truncate">{file.type}</p>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
                       <span
